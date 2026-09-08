@@ -21,3 +21,9 @@ def test_refund_conflict():
 
 def test_silence_is_not_a_guess():
     assert ask('Can I bring my pet parrot to lectures?')['status'] == 'not_covered'
+
+def test_audit_exposes_evaluation_provenance():
+    audit = client.get('/audit').json()
+    assert audit['corpus_words'] >= 6000
+    assert audit['abstention_test_questions'] == 25
+    assert len(audit['planted_conflicts']) == 3

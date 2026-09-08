@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import csv
-import math
+import json
 import re
-from collections import Counter
 from pathlib import Path
 from typing import Literal
 
@@ -41,6 +40,20 @@ class Passage(BaseModel):
     source: str
     text: str
     topic: str
+
+
+class AuditConflict(BaseModel):
+    question: str
+    sections: list[str]
+
+
+class AuditResponse(BaseModel):
+    corpus_words: int
+    passages_indexed: int
+    sources: dict[str, int]
+    topics: dict[str, int]
+    planted_conflicts: list[AuditConflict]
+    abstention_test_questions: int
 
 
 def tokens(text: str) -> set[str]:
@@ -81,6 +94,18 @@ def topic_for(text: str) -> str:
 
 
 PASSAGES = load_passages()
+
+
+def build_audit() -> AuditResponse:
+    source_counts: dict[str, int] = {}
+    topic_counts: dict[str, int] = {}
+    for passage in PASSAGES:
+        source_counts[passage.source] = source_counts.get(passage.source, 0) + 1
+        topic_counts[passage.topic] = topic_counts.get(passage.topic, 0) + 1
+    evaluation = json.loads((ROOT / "data" / "evaluation.json").read_text(encoding="utf-8"))
+    conflicts = [AuditConflict(question=item["question"], sections=item["sources"]) for item in evaluation["intentional_conflicts"]]
+    corpus_words = sum(len(TOKEN.findall(p.text)) for p in PASSAGES)
+    return AuditResponse(corpus_words=corpus_words, passages_indexed=len(PASSAGES), sources=source_counts, topics=topic_counts, planted_conflicts=conflicts, abstention_test_questions=len(evaluation["not_covered"]))
 
 
 def score(question: str, passage: Passage) -> float:
@@ -136,6 +161,12 @@ def home() -> str:
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok", "passages": len(PASSAGES)}
+
+
+@app.get("/audit", response_model=AuditResponse)
+def audit() -> AuditResponse:
+    """Expose corpus provenance and the intentional evaluation set for demos."""
+    return build_audit()
 
 
 @app.post("/ask", response_model=AskResponse)
