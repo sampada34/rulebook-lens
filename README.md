@@ -12,6 +12,7 @@ An evidence-first question-answering service for university regulations. It answ
 - Built-in evaluation suite: planted conflicts and 25 deliberately unanswerable questions
 - Evidence Lab dashboard with corpus statistics, conflict test register, and JSON session export
 - Human-review queue for conflicts, plus Docker deployment files for a repeatable company demo
+- Optional OpenAI-grounded summaries that never control coverage, citations, or conflict decisions
 
 ## Run locally
 
@@ -30,8 +31,10 @@ Open http://127.0.0.1:8000. API docs are at http://127.0.0.1:8000/docs.
 The deterministic policy engine always determines citations, coverage, and conflicts. To add an AI-written plain-language summary for **answered** results only, configure the server with a key and a model name. Never commit the key.
 
 ```bash
-export OPENAI_API_KEY="your_key_here"
-export OPENAI_MODEL="your_enabled_model"
+cp .env.example .env
+# Edit .env locally; do not commit it. Set:
+# OPENAI_API_KEY=your_key_here
+# OPENAI_MODEL=gpt-5-mini
 uvicorn app.main:app --reload
 ```
 
@@ -52,6 +55,9 @@ The response contains `status`, a plain-language `answer`, and visible `citation
 ```bash
 pytest -q
 ```
+
+The repository includes `pytest.ini`, so both `pytest -q` and `python -m pytest -q`
+run from the project directory resolve the local application package correctly.
 
 The project includes `data/evaluation.json`, documenting the three intentional contradictions and 25 questions that should result in `not_covered`.
 
