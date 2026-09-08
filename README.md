@@ -11,6 +11,7 @@ An evidence-first question-answering service for university regulations. It answ
 - A deterministic, dependency-light retrieval pipeline that works offline
 - Built-in evaluation suite: planted conflicts and 25 deliberately unanswerable questions
 - Evidence Lab dashboard with corpus statistics, conflict test register, and JSON session export
+- Human-review queue for conflicts, plus Docker deployment files for a repeatable company demo
 
 ## Run locally
 

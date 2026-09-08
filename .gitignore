@@ -3,4 +3,5 @@ __pycache__/
 .pytest_cache/
 *.py[cod]
 work/
+data/review_queue.db
 .DS_Store

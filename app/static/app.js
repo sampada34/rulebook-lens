@@ -2,6 +2,7 @@ const input = document.querySelector('#question');
 const result = document.querySelector('#result');
 const ask = document.querySelector('#ask');
 const history = [];
+let lastAnswer = null;
 document.querySelectorAll('.examples button').forEach(b => b.onclick = () => { input.value = b.textContent; run(); });
 ask.onclick = run; input.addEventListener('keydown', e => { if (e.key === 'Enter') run(); });
 async function run() {
@@ -13,6 +14,8 @@ async function run() {
     const label = data.status === 'answered' ? 'Answered with citations' : data.status === 'conflict' ? 'Conflict detected' : 'Not covered';
     result.innerHTML = `<div class="status">${label}</div><h2>${data.answer}</h2>${data.citations.length ? `<div class="citations">${data.citations.map(c => `<article><div><strong>${c.section}</strong><span>${c.source}</span></div><b>${Math.round(c.similarity*100)}% match</b><p>${c.excerpt}</p></article>`).join('')}</div>` : '<p class="quiet">No citations were returned because the corpus is silent on this.</p>'}`;
     history.unshift({question, status:data.status, answer:data.answer, citations:data.citations, timestamp:new Date().toISOString()});
+    lastAnswer = {question, ...data};
+    document.querySelector('#review').classList.toggle('hidden', data.status !== 'conflict');
   } catch { result.className = 'result conflict'; result.innerHTML = '<h2>Could not reach the local service.</h2>'; }
   finally { ask.disabled = false; ask.textContent = 'Ask'; }
 }
@@ -30,3 +33,10 @@ document.querySelector('#export').onclick = () => {
   const link = Object.assign(document.createElement('a'), {href:URL.createObjectURL(blob), download:'rulebook-lens-session.json'}); link.click(); URL.revokeObjectURL(link.href);
 };
 loadAudit();
+async function loadCases() {
+  const target = document.querySelector('#cases');
+  try { const cases = await (await fetch('/review-cases')).json(); target.innerHTML = cases.length ? cases.map(item => `<article class="case"><div><strong>Case #${item.id} · ${item.status}</strong><span>${new Date(item.created_at).toLocaleString()} · ${item.evidence_count} evidence items</span></div><p>${item.question}</p>${item.status === 'open' ? `<button class="resolve" data-id="${item.id}">Mark resolved</button>` : ''}</article>`).join('') : '<p class="quiet">No review cases yet. Conflicts can be routed here for a policy owner.</p>'; document.querySelectorAll('.resolve').forEach(button => button.onclick = async () => { await fetch(`/review-cases/${button.dataset.id}/resolve`, {method:'PATCH'}); loadCases(); }); } catch { target.innerHTML = '<p class="quiet">The review queue is unavailable.</p>'; }
+}
+document.querySelector('#route-case').onclick = async () => { if (!lastAnswer) return; const button = document.querySelector('#route-case'); button.disabled = true; button.textContent = 'Routing…'; await fetch('/review-cases', {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({question:lastAnswer.question, note:'Conflict detected by Rulebook Lens. Formal policy-owner interpretation requested.', citations:lastAnswer.citations})}); button.textContent = 'Routed to review'; loadCases(); };
+document.querySelector('#refresh-cases').onclick = loadCases;
+loadCases();

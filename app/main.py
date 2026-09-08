@@ -3,6 +3,8 @@ from __future__ import annotations
 import csv
 import json
 import re
+import sqlite3
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal
 
@@ -55,6 +57,19 @@ class AuditResponse(BaseModel):
     planted_conflicts: list[AuditConflict]
     abstention_test_questions: int
 
+class ReviewCaseRequest(BaseModel):
+    question: str = Field(min_length=4, max_length=500)
+    note: str = Field(default="", max_length=1000)
+    citations: list[Citation] = Field(default_factory=list)
+
+class ReviewCase(BaseModel):
+    id: int
+    question: str
+    note: str
+    status: Literal["open", "resolved"]
+    created_at: str
+    evidence_count: int
+
 
 def tokens(text: str) -> set[str]:
     return {t.lower() for t in TOKEN.findall(text) if t.lower() not in STOPWORDS and len(t) > 1}
@@ -94,6 +109,18 @@ def topic_for(text: str) -> str:
 
 
 PASSAGES = load_passages()
+DB_PATH = ROOT / "data" / "review_queue.db"
+
+def database() -> sqlite3.Connection:
+    connection = sqlite3.connect(DB_PATH)
+    connection.row_factory = sqlite3.Row
+    connection.execute("""CREATE TABLE IF NOT EXISTS review_cases (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, question TEXT NOT NULL, note TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'open', created_at TEXT NOT NULL, evidence_count INTEGER NOT NULL)""")
+    return connection
+
+def serialize_case(row: sqlite3.Row) -> ReviewCase:
+    return ReviewCase(**dict(row))
 
 
 def build_audit() -> AuditResponse:
@@ -167,6 +194,29 @@ def health() -> dict:
 def audit() -> AuditResponse:
     """Expose corpus provenance and the intentional evaluation set for demos."""
     return build_audit()
+
+@app.get("/review-cases", response_model=list[ReviewCase])
+def list_review_cases() -> list[ReviewCase]:
+    with database() as connection:
+        rows = connection.execute("SELECT * FROM review_cases ORDER BY id DESC LIMIT 20").fetchall()
+    return [serialize_case(row) for row in rows]
+
+@app.post("/review-cases", response_model=ReviewCase, status_code=201)
+def create_review_case(request: ReviewCaseRequest) -> ReviewCase:
+    with database() as connection:
+        cursor = connection.execute("INSERT INTO review_cases (question, note, status, created_at, evidence_count) VALUES (?, ?, 'open', ?, ?)", (request.question, request.note, datetime.now(timezone.utc).isoformat(), len(request.citations)))
+        row = connection.execute("SELECT * FROM review_cases WHERE id = ?", (cursor.lastrowid,)).fetchone()
+    return serialize_case(row)
+
+@app.patch("/review-cases/{case_id}/resolve", response_model=ReviewCase)
+def resolve_review_case(case_id: int) -> ReviewCase:
+    with database() as connection:
+        connection.execute("UPDATE review_cases SET status = 'resolved' WHERE id = ?", (case_id,))
+        row = connection.execute("SELECT * FROM review_cases WHERE id = ?", (case_id,)).fetchone()
+    if row is None:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Review case not found")
+    return serialize_case(row)
 
 
 @app.post("/ask", response_model=AskResponse)

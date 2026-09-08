@@ -1,0 +1,7 @@
+services:
+  rulebook-lens:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/service/data
