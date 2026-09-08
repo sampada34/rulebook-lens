@@ -13,6 +13,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from pypdf import PdfReader
+from .ai import synthesize
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data" / "rulebook"
@@ -35,6 +36,7 @@ class AskResponse(BaseModel):
     status: Literal["answered", "not_covered", "conflict"]
     answer: str
     citations: list[Citation]
+    answer_mode: Literal["policy_engine", "grounded_ai"] = "policy_engine"
 
 
 class Passage(BaseModel):
@@ -173,7 +175,9 @@ def answer_question(question: str) -> AskResponse:
     if is_conflict(question, useful):
         return AskResponse(status="conflict", answer="The rulebook contains conflicting instructions on this point. The relevant passages are shown below; a decision-maker should resolve which rule governs before relying on either.", citations=citations)
     best_score, best = useful[0]
-    return AskResponse(status="answered", answer=f"According to {best.section}, {best.text.split('. ')[0].strip()}. This answer is limited to the cited rulebook material.", citations=citations)
+    fallback = f"According to {best.section}, {best.text.split('. ')[0].strip()}. This answer is limited to the cited rulebook material."
+    ai_answer = synthesize(question, citations)
+    return AskResponse(status="answered", answer=ai_answer or fallback, citations=citations, answer_mode="grounded_ai" if ai_answer else "policy_engine")
 
 
 app = FastAPI(title="Rulebook Lens", version="1.0.0", description="Transparent, citation-first rulebook QA")

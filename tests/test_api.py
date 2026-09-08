@@ -10,6 +10,7 @@ def test_health_and_answer():
     response = ask('How do I submit a medical certificate for absence?')
     assert response['status'] == 'answered'
     assert response['citations']
+    assert response['answer_mode'] == 'policy_engine'
 
 def test_attendance_conflict():
     response = ask('Can I sit an exam with 68% attendance?')
@@ -33,3 +34,9 @@ def test_conflict_can_be_handed_to_human_review():
     assert created.status_code == 201
     case = created.json()
     assert client.patch(f"/review-cases/{case['id']}/resolve").json()['status'] == 'resolved'
+
+def test_ai_summary_is_used_only_after_policy_engine_allows_answer(monkeypatch):
+    monkeypatch.setattr('app.main.synthesize', lambda question, citations: 'A grounded AI summary.')
+    assert ask('How do I submit a medical certificate for absence?')['answer_mode'] == 'grounded_ai'
+    # Conflicts remain deterministic even when an AI provider is configured.
+    assert ask('Can I sit an exam with 68% attendance?')['answer_mode'] == 'policy_engine'

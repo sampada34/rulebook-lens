@@ -11,7 +11,7 @@ async function run() {
   try {
     const r = await fetch('/ask', {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({question})}); const data = await r.json();
     result.className = `result ${data.status}`;
-    const label = data.status === 'answered' ? 'Answered with citations' : data.status === 'conflict' ? 'Conflict detected' : 'Not covered';
+    const label = data.status === 'answered' ? (data.answer_mode === 'grounded_ai' ? 'AI-grounded answer with citations' : 'Answered with citations') : data.status === 'conflict' ? 'Conflict detected' : 'Not covered';
     result.innerHTML = `<div class="status">${label}</div><h2>${data.answer}</h2>${data.citations.length ? `<div class="citations">${data.citations.map(c => `<article><div><strong>${c.section}</strong><span>${c.source}</span></div><b>${Math.round(c.similarity*100)}% match</b><p>${c.excerpt}</p></article>`).join('')}</div>` : '<p class="quiet">No citations were returned because the corpus is silent on this.</p>'}`;
     history.unshift({question, status:data.status, answer:data.answer, citations:data.citations, timestamp:new Date().toISOString()});
     lastAnswer = {question, ...data};

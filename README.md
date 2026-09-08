@@ -25,6 +25,18 @@ uvicorn app.main:app --reload
 
 Open http://127.0.0.1:8000. API docs are at http://127.0.0.1:8000/docs.
 
+## Optional OpenAI-grounded answers
+
+The deterministic policy engine always determines citations, coverage, and conflicts. To add an AI-written plain-language summary for **answered** results only, configure the server with a key and a model name. Never commit the key.
+
+```bash
+export OPENAI_API_KEY="your_key_here"
+export OPENAI_MODEL="your_enabled_model"
+uvicorn app.main:app --reload
+```
+
+The integration uses the OpenAI Responses API with `store=False`. Conflict and not-covered outcomes intentionally bypass the model, ensuring that AI cannot conceal a contradiction or invent a policy.
+
 ## API
 
 ```bash
