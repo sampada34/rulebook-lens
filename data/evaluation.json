@@ -1,0 +1,10 @@
+{
+  "intentional_conflicts": [
+    {"question": "Can I sit an exam with 68% attendance?", "sources": ["AR 2.1", "AR 2.4"]},
+    {"question": "What is the refund deadline?", "sources": ["FP 2.2", "FP 2.5"]},
+    {"question": "Can my guest stay overnight in the hostel?", "sources": ["SL 2.3", "SL 2.7"]}
+  ],
+  "not_covered": [
+    "Can I bring my pet parrot to lectures?", "Can I park a helicopter on campus?", "What is the cafeteria vegan menu?", "Can I transfer to a university in another country?", "What happens if I miss an exam for a family wedding?", "Can I borrow a laptop from the library?", "Does the university offer childcare?", "Can I change my legal name on my degree?", "What is the bus schedule to campus?", "Can my sibling attend my graduation?", "Do I need a visa to study here?", "Can I sell handmade items in the hallway?", "What is the football team tryout date?", "Can I bring a bicycle into a lecture?", "Does the university provide dental insurance?", "Can I take a gap year after accepting an offer?", "How do I join the debating society?", "Can I get credit for an internship abroad?", "What are the rules for bringing a pet fish?", "Can I book a music rehearsal room?", "Does the campus have a swimming pool?", "Can I receive mail at my residence?", "What is the dress code for graduation?", "Can I request a vegan meal plan?", "Can I apply for a research assistant job?"
+  ]
+}
