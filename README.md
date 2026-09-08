@@ -40,6 +40,20 @@ uvicorn app.main:app --reload
 
 The integration uses the OpenAI Responses API with `store=False`. Conflict and not-covered outcomes intentionally bypass the model, ensuring that AI cannot conceal a contradiction or invent a policy.
 
+## Deploy to Render
+
+This repository includes `render.yaml` for a Docker-based Render Web Service. In
+Render, create a **New + Blueprint**, connect
+`https://github.com/sampada34/rulebook-lens`, and select the repository. Render
+will use the tracked configuration, health-check `/health`, and deploy every new
+commit to `main` automatically.
+
+The optional OpenAI integration works without any source-code change: add
+`OPENAI_API_KEY` and `OPENAI_MODEL=gpt-5-mini` as Render environment variables
+in the dashboard. Do not place either value in `render.yaml` or commit a `.env`
+file. The free deployment is suitable for a public demo; its local SQLite review
+queue may be reset after a redeploy, so use a managed database before production.
+
 ## API
 
 ```bash

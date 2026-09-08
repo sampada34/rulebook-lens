@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+.venv/
+.git/
+.pytest_cache/
+__pycache__/
+*.py[cod]
+data/review_queue.db
+work/
+.DS_Store
