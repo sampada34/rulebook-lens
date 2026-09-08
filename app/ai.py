@@ -6,8 +6,11 @@ conflict status. Those decisions stay in the deterministic policy engine.
 from __future__ import annotations
 
 import os
+from dotenv import load_dotenv
 
 from .main_types import CitationLike
+
+load_dotenv()
 
 
 def synthesize(question: str, citations: list[CitationLike]) -> str | None:

@@ -5,3 +5,4 @@ reportlab==4.2.5
 pytest==8.3.4
 httpx==0.28.1
 openai>=1.0.0,<3.0.0
+python-dotenv>=1.0.0,<2.0.0
